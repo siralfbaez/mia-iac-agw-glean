@@ -1,0 +1,85 @@
+# --- System / OS ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# --- Go / Services ---
+bin/
+vendor/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# --- Java / Flink Processor ---
+.gradle/
+build/
+target/
+*.class
+*.jar
+*.war
+*.ear
+.factorypath
+.project
+.classpath
+.settings/
+.idea/
+*.iml
+
+# --- Python / Tooling ---
+__pycache__/
+.venv/
+venv/
+env/
+.python-version
+.ipynb_checkpoints/
+*.pyc
+
+# --- Terraform & Infrastructure ---
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+.terraform.lock.hcl
+*.log
+override.tf
+override.tf.json
+
+# --- Security, Secrets & Certificates (CRITICAL) ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.pub
+*.crt
+*.csr
+secret.tfvars
+
+# Protect Java/mTLS Keystores & Truststores for Confluent/Flink
+*.jks
+*.p12
+*.pfx
+
+# Protects Cloud/IdP specific local auth tokens
+.gcloud/
+.azure/
+credentials.json
+adc.json
+gcp-key.json
+azure-tokens.json
+
+# Exclude broad JSON files safely while keeping API/Policy definitions
+*.json
+!api/proto/*.json
+!api/openapi/*.json
+!.env.example
+!terraform/**/*.json
+
+# --- Deliverables & Artifacts ---
+data/output/
+dist/
