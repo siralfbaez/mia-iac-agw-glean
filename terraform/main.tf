@@ -1,3 +1,8 @@
+module "networking_foundation" {
+  source      = "./modules/shared-vpc-network"
+  gcp_region  = var.gcp_region
+}
+
 # 1. Instantiate the Confluent Cloud Event Mesh Backbone Module
 module "confluent_backbone" {
   source               = "./modules/confluent-cloud-cluster"
