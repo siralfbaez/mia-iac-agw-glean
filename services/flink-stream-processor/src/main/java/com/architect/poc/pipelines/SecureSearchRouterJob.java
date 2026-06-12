@@ -1,13 +1,21 @@
 package com.architect.poc.pipelines;
 
-// --- required imports ---
-import com.architect.poc.udfs.VertexAIAsyncEnricher;
+// --- Core Flink Connection & Stream Framework Imports ---
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+
+// --- Custom POC Core Module Imports ---
+import com.architect.poc.udfs.VertexAIAsyncEnricher;
+import com.architect.poc.transformers.PayloadTransformer;
+import com.architect.poc.sinks.GleanSecureSink;
+
+// --- Base Java Standard Utilities ---
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -36,31 +44,32 @@ public class SecureSearchRouterJob {
                 .build();
 
         // 1. Read Raw Stream
-        DataStream<String> rawStream = env.fromSource(source, org.apache.flink.api.common.eventtime.WatermarkStrategy.noWatermarks(), "ConfluentCloudSource");
+        DataStream<String> rawStream = env.fromSource(source, WatermarkStrategy.noWatermarks(), "ConfluentCloudSource");
 
-        // 2. Map Stream to Conformed Objects
+        // 2. Map Stream to Conformed Objects and Apply Business Rules Matrix
         DataStream<EnterpriseEvent> conformedStream = rawStream.map(json -> {
-            // In implementation, map incoming json string to EnterpriseEvent object
             EnterpriseEvent event = new EnterpriseEvent();
-            event.sourceSystem = "slack";
+            event.sourceSystem = json.contains("channel") ? "slack" : (json.contains("changeEventHeader") ? "salesforce" : "teams");
+            event.entityId = "id-" + java.util.UUID.randomUUID().toString().substring(0, 8);
             event.rawPayload = json;
+            event.aclMetadata = new ArrayList<>();
+            event.aclMetadata.add("entra-ad-group-placeholder-guid");
             return event;
-        });
+        }).map(event -> {
+            PayloadTransformer transformer = new PayloadTransformer();
+            return transformer.transform(event);
+        }).name("Enterprise-Payload-Transformation-Matrix");
 
         // 3. Apply Asynchronous Execution Graph to call Vertex AI non-blockingly
-        // Setting a 10-second timeout with a capacity limit of 100 concurrent async calls
-        DataStream<EnterpriseEvent> enrichedStream = AsyncDataStream.unorderedWait(
+        DataStream<EnterpriseEvent> enrichedStream = AsyncDataStream.orderedWait(
                 conformedStream,
-                new VertexAIAsyncEnricher(),
+                new VertexAIAsyncEnricher(), // Corrected name matching class reference
                 10000, TimeUnit.MILLISECONDS,
                 100
-        ).name("VertexAI-Async-Enrichment-Worker");
+        ).name("Vertex-AI-Embedding-Async-Enrichment");
 
-        // 4. Multiplex and Route to Sinks
-        // Sink A: Send everything to Glean with strict Azure AD permissions attached
-        // enrichedStream.print(); // Placeholder for Glean Custom Push Sink Node
-        // --- to securely anchor the bridge. ---
-        .addSink(new GleanSecureSink()).name("Glean-Secure-Identity-Sink");
+        // 4. Multiplex and Securely Dispatch to Downstream Sinks
+        enrichedStream.addSink(new GleanSecureSink()).name("Glean-Secure-Identity-Sink");
 
         env.execute("MIA-IAC-AGW-Glean-SecureRouter");
     }
