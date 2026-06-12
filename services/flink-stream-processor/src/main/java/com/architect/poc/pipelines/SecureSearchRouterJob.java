@@ -1,5 +1,6 @@
 package com.architect.poc.pipelines;
 
+// --- required imports ---
 import com.architect.poc.udfs.VertexAIAsyncEnricher;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
