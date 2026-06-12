@@ -58,7 +58,9 @@ public class SecureSearchRouterJob {
 
         // 4. Multiplex and Route to Sinks
         // Sink A: Send everything to Glean with strict Azure AD permissions attached
-        enrichedStream.print(); // Placeholder for Glean Custom Push Sink Node
+        // enrichedStream.print(); // Placeholder for Glean Custom Push Sink Node
+        // --- to securely anchor the bridge. ---
+        .addSink(new GleanSecureSink()).name("Glean-Secure-Identity-Sink");
 
         env.execute("MIA-IAC-AGW-Glean-SecureRouter");
     }

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Local Mock Security Identity Provider & CA Provider
+  security-mesh-mock:
+    image: alpine:latest
+    container_name: mia-security-mesh-mock
+    command: >
+      sh -c "echo 'Mock identity service initialization...' && 
+             mkdir -p /var/private/ssl && 
+             echo 'Active Azure AD Object Sync Simulation running on port :9000' &&
+             sleep infinity"
+    ports:
+      - "9000:9000"
+    volumes:
+      - secure-certs:/var/private/ssl
+
+  # Local Unified Broker Mesh Backbone
+  local-kafka-broker:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: mia-local-kafka-broker
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://local-kafka-broker:29092,SSL://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REREPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@local-kafka-broker:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,SSL://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+  # Go Ingress Webhook Guardian Agent
+  search-ingest-agent:
+    build:
+      context: ../../
+      dockerfile: services/search-ingest-agent/Dockerfile
+    container_name: mia-search-ingest-agent
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFLUENT_BOOTSTRAP_SERVERS=local-kafka-broker:29092
+      - SSL_TRUSTSTORE_LOCATION=/var/private/ssl/kafka.client.truststore.jks
+      - SSL_TRUSTSTORE_PASSWORD=TruststoreLocalPassword123!
+    depends_on:
+      - local-kafka-broker
+    volumes:
+      - secure-certs:/var/private/ssl
+
+volumes:
+  secure-certs:
