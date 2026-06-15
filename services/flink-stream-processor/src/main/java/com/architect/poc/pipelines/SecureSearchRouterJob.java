@@ -64,7 +64,7 @@ public class SecureSearchRouterJob {
         DataStream<EnterpriseEvent> enrichedStream = AsyncDataStream.orderedWait(
                 conformedStream,
                 new VertexAIAsyncEnricher(), // Corrected name matching class reference
-                10000, TimeUnit.MILLISECONDS,
+                11110, TimeUnit.MILLISECONDS,
                 100
         ).name("Vertex-AI-Embedding-Async-Enrichment");
 
