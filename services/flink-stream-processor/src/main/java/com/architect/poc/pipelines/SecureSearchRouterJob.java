@@ -58,7 +58,7 @@ public class SecureSearchRouterJob {
         }).map(event -> {
             PayloadTransformer transformer = new PayloadTransformer();
             return transformer.transform(event);
-        }).name("Enterprise-Payload-Transformation-Matrix");
+        }).name("Enterprise-Payload-Transformation-Matrx");
 
         // 3. Apply Asynchronous Execution Graph to call Vertex AI non-blockingly
         DataStream<EnterpriseEvent> enrichedStream = AsyncDataStream.orderedWait(
@@ -69,7 +69,7 @@ public class SecureSearchRouterJob {
         ).name("Vertex-AI-Embedding-Async-Enrichment");
 
         // 4. Multiplex and Securely Dispatch to Downstream Sinks
-        enrichedStream.addSink(new GleanSecureSink()).name("Glean-Secure-Identity-Sink");
+        enrichedStream.addSink(new GleanSecureSink()).name("Glean-Secure-Identity-Sin");
 
         env.execute("MIA-IAC-AGW-Glean-SecureRouter");
     }
