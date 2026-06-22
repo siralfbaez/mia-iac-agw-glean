@@ -58,13 +58,13 @@ public class SecureSearchRouterJob {
         }).map(event -> {
             PayloadTransformer transformer = new PayloadTransformer();
             return transformer.transform(event);
-        }).name("Enterprise-Payload-Transformation-Matrx");
+        }).name("Enterprise-Payload-Transformation-Matrix");
 
         // 3. Apply Asynchronous Execution Graph to call Vertex AI non-blockingly
         DataStream<EnterpriseEvent> enrichedStream = AsyncDataStream.orderedWait(
                 conformedStream,
                 new VertexAIAsyncEnricher(), // Corrected name matching class reference
-                11110, TimeUnit.MILLISECONDS,
+                11111, TimeUnit.MILLISECONDS,
                 100
         ).name("Vertex-AI-Embedding-Async-Enrichment");
 
